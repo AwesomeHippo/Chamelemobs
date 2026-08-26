@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.awesomehippo.chamelemobs.mixin",
+  "refmap": "chamelemobs.refmap.json",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [],
+  "client": [
+    "LivingEntityRendererMixin",
+    "EntityRenderDispatcherMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
