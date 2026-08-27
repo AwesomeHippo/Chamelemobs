@@ -1,10 +1,9 @@
 package com.awesomehippo.chamelemobs;
 
+import com.awesomehippo.chamelemobs.client.ClientEvents;
 import com.awesomehippo.chamelemobs.config.Config;
-import com.awesomehippo.chamelemobs.config.ConfigScreen;
+import com.awesomehippo.chamelemobs.network.Network;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.ConfigScreenHandler;
-import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 
@@ -13,9 +12,10 @@ public class Chamelemobs {
     public static final String MOD_ID = "chamelemobs";
 
     public Chamelemobs() {
+        Config.load();
+        Network.register();
         if (FMLEnvironment.dist == Dist.CLIENT) {
-            Config.load();
-            ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () -> new ConfigScreenHandler.ConfigScreenFactory((mc, screen) -> new ConfigScreen(screen)));
+            ClientEvents.init();
         }
     }
 }

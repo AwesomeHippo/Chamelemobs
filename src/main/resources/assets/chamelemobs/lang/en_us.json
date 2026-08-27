@@ -6,5 +6,6 @@
   "chamelemobs.config.mobs.label": "Mobs:",
   "chamelemobs.config.toggle.enabled": "Enabled",
   "chamelemobs.config.toggle.disabled": "Disabled",
-  "chamelemobs.config.save.tooltip": "Save settings"
+  "chamelemobs.config.save.tooltip": "Save settings",
+  "chamelemobs.config.locked.tooltip": "Settings set by the server"
 }

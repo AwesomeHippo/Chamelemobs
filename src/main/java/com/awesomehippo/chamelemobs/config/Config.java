@@ -25,16 +25,21 @@ public class Config {
 
     public static boolean enabled = true;
     public static float strength = 1.0f;
+    public static boolean locked = false;
+    private static boolean localEnabled = true;
+    private static float localStrength = 1.0f;
+    private static final List<String> LOCAL_MOBS = new ArrayList<>(DEFAULT_MOBS);
 
     private static final List<String> MOB_IDS = new ArrayList<>();
     private static final Set<ResourceLocation> MOBS = new HashSet<>();
 
     public static void load() {
         if (!Files.exists(FILE)) {
-            enabled = true;
-            strength = 1.0f;
-            setMobs(DEFAULT_MOBS);
-            save();
+            resetLocal();
+            writeFile();
+            if (!locked) {
+                useLocal();
+            }
             return;
         }
         try (Reader reader = Files.newBufferedReader(FILE)) {
@@ -42,26 +47,69 @@ public class Config {
             if (data == null) {
                 data = new FileData();
             }
-            if (data.enabled != null) {
-                enabled = data.enabled;
-            }
+            localEnabled = data.enabled != null ? data.enabled : true;
             if (data.strength != null) {
-                strength = Math.round(Mth.clamp(data.strength, 0.0f, 1.0f) * 100.0f) / 100.0f;
+                localStrength = Math.round(Mth.clamp(data.strength, 0.0f, 1.0f) * 100.0f) / 100.0f;
+            } else {
+                localStrength = 1.0f;
             }
-            setMobs(data.mobs);
+            LOCAL_MOBS.clear();
+            LOCAL_MOBS.addAll(cleanIds(data.mobs));
+            if (!locked) {
+                useLocal();
+            }
         } catch (Exception e) {
-            enabled = true;
-            strength = 1.0f;
-            setMobs(DEFAULT_MOBS);
+            resetLocal();
+            if (!locked) {
+                useLocal();
+            }
         }
     }
 
     public static void save() {
-        strength = Math.round(Mth.clamp(strength, 0.0f, 1.0f) * 100.0f) / 100.0f;
+        if (!locked) {
+            localEnabled = enabled;
+            localStrength = Math.round(Mth.clamp(strength, 0.0f, 1.0f) * 100.0f) / 100.0f;
+            strength = localStrength;
+            LOCAL_MOBS.clear();
+            LOCAL_MOBS.addAll(MOB_IDS);
+        }
+        writeFile();
+    }
+
+    public static void applyRemote(boolean enabled, float strength, List<String> mobs) {
+        locked = true;
+        Config.enabled = enabled;
+        Config.strength = Math.round(Mth.clamp(strength, 0.0f, 1.0f) * 100.0f) / 100.0f;
+        setMobs(mobs);
+    }
+
+    public static void clearRemote() {
+        if (!locked) {
+            return;
+        }
+        locked = false;
+        load();
+    }
+
+    private static void resetLocal() {
+        localEnabled = true;
+        localStrength = 1.0f;
+        LOCAL_MOBS.clear();
+        LOCAL_MOBS.addAll(DEFAULT_MOBS);
+    }
+
+    private static void useLocal() {
+        enabled = localEnabled;
+        strength = localStrength;
+        setMobs(LOCAL_MOBS);
+    }
+
+    private static void writeFile() {
         FileData data = new FileData();
-        data.enabled = enabled;
-        data.strength = strength;
-        data.mobs = new ArrayList<>(MOB_IDS);
+        data.enabled = localEnabled;
+        data.strength = localStrength;
+        data.mobs = new ArrayList<>(LOCAL_MOBS);
         try {
             Files.createDirectories(FILE.getParent());
             try (Writer writer = Files.newBufferedWriter(FILE)) {
@@ -77,6 +125,17 @@ public class Config {
     public static void setMobs(List<String> ids) {
         MOB_IDS.clear();
         MOBS.clear();
+        for (String id : cleanIds(ids)) {
+            ResourceLocation loc = ResourceLocation.tryParse(id);
+            if (loc != null && MOBS.add(loc)) {
+                MOB_IDS.add(id);
+            }
+        }
+    }
+
+    private static List<String> cleanIds(List<String> ids) {
+        List<String> out = new ArrayList<>();
+        Set<ResourceLocation> seen = new HashSet<>();
         if (ids != null) {
             for (String id : ids) {
                 if (id == null || id.isBlank()) {
@@ -84,22 +143,15 @@ public class Config {
                 }
                 String trimmed = id.trim();
                 ResourceLocation loc = ResourceLocation.tryParse(trimmed);
-                if (loc == null) {
-                    continue;
-                }
-                if (MOBS.add(loc)) {
-                    MOB_IDS.add(trimmed);
+                if (loc != null && seen.add(loc)) {
+                    out.add(trimmed);
                 }
             }
         }
-        if (MOBS.isEmpty()) {
-            for (String id : DEFAULT_MOBS) {
-                ResourceLocation loc = ResourceLocation.tryParse(id);
-                if (loc != null && MOBS.add(loc)) {
-                    MOB_IDS.add(id);
-                }
-            }
+        if (out.isEmpty()) {
+            out.addAll(DEFAULT_MOBS);
         }
+        return out;
     }
 
     public static boolean shouldCloak(Entity entity) {

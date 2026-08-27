@@ -1,5 +1,6 @@
 package com.awesomehippo.chamelemobs.config;
 
+import com.awesomehippo.chamelemobs.network.Network;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -8,6 +9,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.MultiLineEditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,10 +21,12 @@ public class ConfigScreen extends Screen {
     private ToggleOptionButton enabledButton;
     private StrengthSlider strengthSlider;
     private MultiLineEditBox mobsBox;
+    private Button doneButton;
     private String mobsText;
     private int leftX;
     private int titleY;
     private int mobsHeaderY;
+    private boolean widgetsLocked;
 
     public ConfigScreen(Screen parent) {
         super(Component.translatable("chamelemobs.config.title"));
@@ -44,6 +48,10 @@ public class ConfigScreen extends Screen {
         int y = Math.max(28, (height - blockHeight) / 2);
         titleY = Math.max(8, y - 16);
 
+        if (Config.locked) {
+            mobsText = String.join("\n", Config.mobIds());
+        }
+
         strengthSlider = new StrengthSlider(leftX, y, contentWidth, controlHeight, Config.strength);
         strengthSlider.setTooltip(Tooltip.create(Component.translatable("chamelemobs.config.strength.tooltip")));
         addRenderableWidget(strengthSlider);
@@ -54,21 +62,71 @@ public class ConfigScreen extends Screen {
         enabledButton.setTooltip(Tooltip.create(Component.translatable("chamelemobs.config.enabled.tooltip")));
         addRenderableWidget(enabledButton);
         y += toggleHeight + 4;
-        mobsBox = new MultiLineEditBox(font, leftX, y, contentWidth, boxHeight, Component.empty(), Component.translatable("chamelemobs.config.mobs.label"));
+        mobsBox = new MultiLineEditBox(font, leftX, y, contentWidth, boxHeight, Component.empty(), Component.translatable("chamelemobs.config.mobs.label")) {
+            @Override
+            public boolean keyPressed(int key, int scan, int mods) {
+                return this.active && super.keyPressed(key, scan, mods);
+            }
+
+            @Override
+            public boolean charTyped(char c, int mods) {
+                return this.active && super.charTyped(c, mods);
+            }
+
+            @Override
+            public boolean mouseClicked(double mouseX, double mouseY, int button) {
+                return this.active && super.mouseClicked(mouseX, mouseY, button);
+            }
+
+            @Override
+            public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+                return this.active && super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+            }
+        };
         mobsBox.setValue(mobsText);
         mobsBox.setValueListener(value -> mobsText = value);
         addRenderableWidget(mobsBox);
         y += boxHeight + 12;
 
-        addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose()).bounds(leftX, y, contentWidth, controlHeight).tooltip(Tooltip.create(Component.translatable("chamelemobs.config.save.tooltip"))).build());
+        doneButton = Button.builder(Component.translatable("gui.done"), button -> onClose()).bounds(leftX, y, contentWidth, controlHeight).tooltip(Tooltip.create(Component.translatable("chamelemobs.config.save.tooltip"))).build();
+        addRenderableWidget(doneButton);
+        widgetsLocked = false;
+        applyLock();
     }
 
     @Override
     public void tick() {
         mobsBox.tick();
+        applyLock();
+    }
+
+    private void applyLock() {
+        if (Config.locked == widgetsLocked) {
+            return;
+        }
+        widgetsLocked = Config.locked;
+        strengthSlider.active = !widgetsLocked;
+        enabledButton.active = !widgetsLocked;
+        mobsBox.active = !widgetsLocked;
+        if (widgetsLocked) {
+            setFocused(null);
+            Tooltip tip = Tooltip.create(Component.translatable("chamelemobs.config.locked.tooltip"));
+            strengthSlider.setTooltip(tip);
+            enabledButton.setTooltip(tip);
+            mobsBox.setTooltip(tip);
+            doneButton.setTooltip(tip);
+        } else {
+            strengthSlider.setTooltip(Tooltip.create(Component.translatable("chamelemobs.config.strength.tooltip")));
+            enabledButton.setTooltip(Tooltip.create(Component.translatable("chamelemobs.config.enabled.tooltip")));
+            mobsBox.setTooltip(null);
+            doneButton.setTooltip(Tooltip.create(Component.translatable("chamelemobs.config.save.tooltip")));
+        }
     }
 
     private void saveSettings() {
+        if (Config.locked) {
+            return;
+        }
         Config.enabled = enabledButton.selected();
         Config.strength = (float) strengthSlider.getActualValue();
         List<String> ids = new ArrayList<>();
@@ -82,6 +140,10 @@ public class ConfigScreen extends Screen {
         }
         Config.setMobs(ids);
         Config.save();
+        IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
+        if (server != null) {
+            server.execute(Network::sendToAll);
+        }
     }
 
     @Override
@@ -102,6 +164,11 @@ public class ConfigScreen extends Screen {
         public StrengthSlider(int x, int y, int width, int height, double currentValue) {
             super(x, y, width, height, Component.empty(), currentValue);
             updateMessage();
+        }
+
+        @Override
+        public boolean keyPressed(int key, int scan, int mods) {
+            return this.active && super.keyPressed(key, scan, mods);
         }
 
         @Override

@@ -2,6 +2,7 @@ package com.awesomehippo.chamelemobs.client;
 
 import com.awesomehippo.chamelemobs.Chamelemobs;
 import com.awesomehippo.chamelemobs.config.Config;
+import com.awesomehippo.chamelemobs.config.ConfigScreen;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -17,12 +18,33 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.ConfigScreenHandler;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+
+import java.util.List;
 
 @Mod.EventBusSubscriber(modid = Chamelemobs.MOD_ID, value = Dist.CLIENT)
 public class ClientEvents {
+    public static void init() {
+        ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () -> new ConfigScreenHandler.ConfigScreenFactory((mc, screen) -> new ConfigScreen(screen)));
+    }
+
+    public static void applyServerConfig(boolean enabled, float strength, List<String> mobs) {
+        if (Minecraft.getInstance().hasSingleplayerServer()) { // server is the client:p
+            return;
+        }
+        Config.applyRemote(enabled, strength, mobs);
+    }
+
+    @SubscribeEvent
+    public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+        Config.clearRemote();
+    }
+
     @SubscribeEvent
     public static void onStage(RenderLevelStageEvent event) {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS) {

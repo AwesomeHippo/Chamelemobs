@@ -6,5 +6,6 @@
   "chamelemobs.config.mobs.label": "Mobs:",
   "chamelemobs.config.toggle.enabled": "Activé",
   "chamelemobs.config.toggle.disabled": "Désactivé",
-  "chamelemobs.config.save.tooltip": "Enregistrer les paramètres"
+  "chamelemobs.config.save.tooltip": "Enregistrer les paramètres",
+  "chamelemobs.config.locked.tooltip": "Paramètres definis par le serveur"
 }
