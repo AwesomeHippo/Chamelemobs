@@ -1,0 +1,11 @@
+{
+  "chamelemobs.config.title": "Chamelemobs",
+  "chamelemobs.config.enabled.tooltip": "Enable or disable the mod",
+  "chamelemobs.config.strength.label": "Strength: %s",
+  "chamelemobs.config.strength.tooltip": "How much the listed mobs blend into the background",
+  "chamelemobs.config.mobs.label": "Mobs:",
+  "chamelemobs.config.toggle.enabled": "Enabled",
+  "chamelemobs.config.toggle.disabled": "Disabled",
+  "chamelemobs.config.save.tooltip": "Save settings",
+  "chamelemobs.config.locked.tooltip": "Settings set by the server"
+}

@@ -1,0 +1,11 @@
+{
+  "chamelemobs.config.title": "Chamelemobs",
+  "chamelemobs.config.enabled.tooltip": "Activer ou desactiver le mod",
+  "chamelemobs.config.strength.label": "Intensité: %s",
+  "chamelemobs.config.strength.tooltip": "À quel point les mobs listés se fondent dans le décor",
+  "chamelemobs.config.mobs.label": "Mobs:",
+  "chamelemobs.config.toggle.enabled": "Activé",
+  "chamelemobs.config.toggle.disabled": "Désactivé",
+  "chamelemobs.config.save.tooltip": "Enregistrer les paramètres",
+  "chamelemobs.config.locked.tooltip": "Paramètres definis par le serveur"
+}

@@ -1,0 +1,40 @@
+# eclipse
+bin
+*.launch
+.settings
+.metadata
+.classpath
+.project
+
+# idea
+out
+*.ipr
+*.iws
+*.iml
+.idea
+
+# gradle
+build
+.gradle
+
+# other
+eclipse
+run
+runs
+run-data
+logs
+repo
+assets2
+scripts
+.jdk
+*.sh
+*.log
+*.lock
+*.old
+
+# for now
+.github
+
+*.jar
+# still allow gradle-wrapper.jar
+!/gradle/wrapper/gradle-wrapper.jar
