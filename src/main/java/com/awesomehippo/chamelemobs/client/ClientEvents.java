@@ -6,6 +6,7 @@ import com.awesomehippo.chamelemobs.config.ConfigScreen;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import org.lwjgl.opengl.GL11;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -49,7 +50,15 @@ public class ClientEvents {
     public static void onStage(RenderLevelStageEvent event) {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS) {
             SceneCopy.afterWater = false;
-            SceneCopy.capture();
+            if (!ShaderPacks.active()) {
+                SceneCopy.capture();
+            }
+            return;
+        }
+        if (ShaderPacks.active()) {
+            if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+                drawAfterWater(event, true);
+            }
             return;
         }
         if (Minecraft.useShaderTransparency()) {
@@ -78,6 +87,13 @@ public class ClientEvents {
         }
         if (!any) {
             return;
+        }
+        if (ShaderPacks.active()) {
+            GL11.glColorMask(true, true, true, true);
+            GL11.glDepthMask(true);
+            GL11.glEnable(GL11.GL_DEPTH_TEST);
+            GL11.glDepthFunc(GL11.GL_LEQUAL);
+            RenderSystem.colorMask(true, true, true, true);
         }
         mc.getMainRenderTarget().bindWrite(false);
         RenderSystem.enableDepthTest();
