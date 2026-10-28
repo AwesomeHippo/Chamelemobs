@@ -1,5 +1,6 @@
 package com.awesomehippo.chamelemobs.config;
 
+import com.awesomehippo.chamelemobs.client.ShaderPacks;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -155,7 +156,7 @@ public class Config {
     }
 
     public static boolean shouldCloak(Entity entity) {
-        if (!enabled || strength <= 0.0f || entity == null) {
+        if (!enabled || strength <= 0.0f || entity == null || ShaderPacks.shadowPass()) {
             return false;
         }
         ResourceLocation key = EntityType.getKey(entity.getType());
