@@ -25,9 +25,9 @@ import java.util.List;
 public class Network {
     @SubscribeEvent
     public static void register(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("1").optional();
+        PayloadRegistrar registrar = event.registrar("2").optional();
         if (FMLEnvironment.dist.isClient()) {
-            registrar.playToClient(SyncPacket.TYPE, SyncPacket.STREAM_CODEC, (msg, ctx) -> ClientEvents.applyServerConfig(msg.enabled, msg.strength, msg.mobs));
+            registrar.playToClient(SyncPacket.TYPE, SyncPacket.STREAM_CODEC, (msg, ctx) -> ClientEvents.applyServerConfig(msg.enabled, msg.strength, msg.brightness, msg.mobs));
         } else {
             registrar.playToClient(SyncPacket.TYPE, SyncPacket.STREAM_CODEC, (msg, ctx) -> {});
         }
@@ -63,21 +63,24 @@ public class Network {
 
         public final boolean enabled;
         public final float strength;
+        public final float brightness;
         public final List<String> mobs;
 
-        private SyncPacket(boolean enabled, float strength, List<String> mobs) {
+        private SyncPacket(boolean enabled, float strength, float brightness, List<String> mobs) {
             this.enabled = enabled;
             this.strength = strength;
+            this.brightness = brightness;
             this.mobs = mobs;
         }
 
         private static SyncPacket current() {
-            return new SyncPacket(Config.enabled, Config.strength, new ArrayList<>(Config.mobIds()));
+            return new SyncPacket(Config.enabled, Config.strength, Config.brightness, new ArrayList<>(Config.mobIds()));
         }
 
         private static void encode(RegistryFriendlyByteBuf buf, SyncPacket packet) {
             buf.writeBoolean(packet.enabled);
             buf.writeFloat(packet.strength);
+            buf.writeFloat(packet.brightness);
             buf.writeVarInt(packet.mobs.size());
             for (String id : packet.mobs) {
                 buf.writeUtf(id);
@@ -87,6 +90,7 @@ public class Network {
         private static SyncPacket decode(RegistryFriendlyByteBuf buf) {
             boolean enabled = buf.readBoolean();
             float strength = buf.readFloat();
+            float brightness = buf.readFloat();
             int n = buf.readVarInt();
             List<String> mobs = new ArrayList<>();
             if (n > 0 && n <= 512) {
@@ -94,7 +98,7 @@ public class Network {
                     mobs.add(buf.readUtf());
                 }
             }
-            return new SyncPacket(enabled, strength, mobs);
+            return new SyncPacket(enabled, strength, brightness, mobs);
         }
 
         @Override

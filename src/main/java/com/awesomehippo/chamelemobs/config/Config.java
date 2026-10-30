@@ -15,8 +15,10 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class Config {
@@ -26,13 +28,15 @@ public class Config {
 
     public static boolean enabled = true;
     public static float strength = 1.0f;
+    public static float brightness = 0.0f;
     public static boolean locked = false;
     private static boolean localEnabled = true;
     private static float localStrength = 1.0f;
+    private static float localBrightness = 0.0f;
     private static final List<String> LOCAL_MOBS = new ArrayList<>(DEFAULT_MOBS);
 
     private static final List<String> MOB_IDS = new ArrayList<>();
-    private static final Set<ResourceLocation> MOBS = new HashSet<>();
+    private static final Map<ResourceLocation, Float> MOBS = new HashMap<>();
 
     public static void load() {
         if (!Files.exists(FILE)) {
@@ -54,6 +58,11 @@ public class Config {
             } else {
                 localStrength = 1.0f;
             }
+            if (data.brightness != null) {
+                localBrightness = Math.round(Mth.clamp(data.brightness, 0.0f, 1.0f) * 100.0f) / 100.0f;
+            } else {
+                localBrightness = 0.0f;
+            }
             LOCAL_MOBS.clear();
             LOCAL_MOBS.addAll(cleanIds(data.mobs));
             if (!locked) {
@@ -72,16 +81,19 @@ public class Config {
             localEnabled = enabled;
             localStrength = Math.round(Mth.clamp(strength, 0.0f, 1.0f) * 100.0f) / 100.0f;
             strength = localStrength;
+            localBrightness = Math.round(Mth.clamp(brightness, 0.0f, 1.0f) * 100.0f) / 100.0f;
+            brightness = localBrightness;
             LOCAL_MOBS.clear();
             LOCAL_MOBS.addAll(MOB_IDS);
         }
         writeFile();
     }
 
-    public static void applyRemote(boolean enabled, float strength, List<String> mobs) {
+    public static void applyRemote(boolean enabled, float strength, float brightness, List<String> mobs) {
         locked = true;
         Config.enabled = enabled;
         Config.strength = Math.round(Mth.clamp(strength, 0.0f, 1.0f) * 100.0f) / 100.0f;
+        Config.brightness = Math.round(Mth.clamp(brightness, 0.0f, 1.0f) * 100.0f) / 100.0f;
         setMobs(mobs);
     }
 
@@ -96,6 +108,7 @@ public class Config {
     private static void resetLocal() {
         localEnabled = true;
         localStrength = 1.0f;
+        localBrightness = 0.0f;
         LOCAL_MOBS.clear();
         LOCAL_MOBS.addAll(DEFAULT_MOBS);
     }
@@ -103,6 +116,7 @@ public class Config {
     private static void useLocal() {
         enabled = localEnabled;
         strength = localStrength;
+        brightness = localBrightness;
         setMobs(LOCAL_MOBS);
     }
 
@@ -110,6 +124,7 @@ public class Config {
         FileData data = new FileData();
         data.enabled = localEnabled;
         data.strength = localStrength;
+        data.brightness = localBrightness;
         data.mobs = new ArrayList<>(LOCAL_MOBS);
         try {
             Files.createDirectories(FILE.getParent());
@@ -127,8 +142,8 @@ public class Config {
         MOB_IDS.clear();
         MOBS.clear();
         for (String id : cleanIds(ids)) {
-            ResourceLocation loc = ResourceLocation.tryParse(id);
-            if (loc != null && MOBS.add(loc)) {
+            MobEntry mob = parseMob(id);
+            if (mob != null && MOBS.putIfAbsent(mob.key(), mob.chance()) == null) {
                 MOB_IDS.add(id);
             }
         }
@@ -143,8 +158,8 @@ public class Config {
                     continue;
                 }
                 String trimmed = id.trim();
-                ResourceLocation loc = ResourceLocation.tryParse(trimmed);
-                if (loc != null && seen.add(loc)) {
+                MobEntry mob = parseMob(trimmed);
+                if (mob != null && seen.add(mob.key())) {
                     out.add(trimmed);
                 }
             }
@@ -155,17 +170,33 @@ public class Config {
         return out;
     }
 
+    private static MobEntry parseMob(String id) {
+        String name = id;
+        float chance = 1.0f;
+        int slash = id.lastIndexOf('/');
+        if (slash > 0 && id.substring(slash + 1).trim().matches("\\d{1,3}")) {
+            name = id.substring(0, slash).trim();
+            chance = Math.min(Integer.parseInt(id.substring(slash + 1).trim()), 100) / 100.0f;
+        }
+        ResourceLocation key = ResourceLocation.tryParse(name);
+        return key == null ? null : new MobEntry(key, chance);
+    }
+
     public static boolean shouldCloak(Entity entity) {
         if (!enabled || strength <= 0.0f || entity == null || ShaderPacks.shadowPass()) {
             return false;
         }
         ResourceLocation key = EntityType.getKey(entity.getType());
-        return MOBS.contains(key);
+        Float chance = MOBS.get(key);
+        return chance != null && (entity.getUUID().hashCode() & 0xFFFF) / 65536.0f < chance;
     }
+
+    private record MobEntry(ResourceLocation key, float chance) {}
 
     private static class FileData {
         Boolean enabled = true;
         Float strength = 1.0f;
+        Float brightness = 0.0f;
         List<String> mobs = new ArrayList<>(DEFAULT_MOBS);
     }
 }

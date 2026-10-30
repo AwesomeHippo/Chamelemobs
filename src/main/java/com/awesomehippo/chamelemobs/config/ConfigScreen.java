@@ -20,6 +20,7 @@ public class ConfigScreen extends Screen {
     private final Screen parent;
     private ToggleOptionButton enabledButton;
     private StrengthSlider strengthSlider;
+    private StrengthSlider brightnessSlider;
     private MultiLineEditBox mobsBox;
     private Button doneButton;
     private String mobsText;
@@ -44,7 +45,7 @@ public class ConfigScreen extends Screen {
         int toggleWidth = Math.max(font.width(Component.translatable("chamelemobs.config.toggle.enabled")), font.width(Component.translatable("chamelemobs.config.toggle.disabled"))) + 16;
         leftX = width / 2 - contentWidth / 2;
 
-        int blockHeight = controlHeight + 12 + toggleHeight + 4 + boxHeight + 12 + controlHeight;
+        int blockHeight = controlHeight + 4 + controlHeight + 12 + toggleHeight + 4 + boxHeight + 12 + controlHeight;
         int y = Math.max(28, (height - blockHeight) / 2);
         titleY = Math.max(8, y - 16);
 
@@ -52,9 +53,14 @@ public class ConfigScreen extends Screen {
             mobsText = String.join("\n", Config.mobIds());
         }
 
-        strengthSlider = new StrengthSlider(leftX, y, contentWidth, controlHeight, Config.strength);
+        strengthSlider = new StrengthSlider(leftX, y, contentWidth, controlHeight, "chamelemobs.config.strength.label", Config.strength);
         strengthSlider.setTooltip(Tooltip.create(Component.translatable("chamelemobs.config.strength.tooltip")));
         addRenderableWidget(strengthSlider);
+        y += 24;
+
+        brightnessSlider = new StrengthSlider(leftX, y, contentWidth, controlHeight, "chamelemobs.config.brightness.label", Config.brightness);
+        brightnessSlider.setTooltip(Tooltip.create(Component.translatable("chamelemobs.config.brightness.tooltip")));
+        addRenderableWidget(brightnessSlider);
         y += 32;
 
         mobsHeaderY = y + (toggleHeight - font.lineHeight) / 2;
@@ -82,9 +88,16 @@ public class ConfigScreen extends Screen {
             public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
                 return this.active && super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
             }
+
+            @Override
+            public void setFocused(boolean focused) {
+                super.setFocused(focused);
+                setTooltip(focused ? null : Tooltip.create(Component.translatable("chamelemobs.config.mobs.tooltip")));
+            }
         };
         mobsBox.setValue(mobsText);
         mobsBox.setValueListener(value -> mobsText = value);
+        mobsBox.setTooltip(Tooltip.create(Component.translatable("chamelemobs.config.mobs.tooltip")));
         addRenderableWidget(mobsBox);
         y += boxHeight + 12;
 
@@ -105,19 +118,22 @@ public class ConfigScreen extends Screen {
         }
         widgetsLocked = Config.locked;
         strengthSlider.active = !widgetsLocked;
+        brightnessSlider.active = !widgetsLocked;
         enabledButton.active = !widgetsLocked;
         mobsBox.active = !widgetsLocked;
         if (widgetsLocked) {
             setFocused(null);
             Tooltip tip = Tooltip.create(Component.translatable("chamelemobs.config.locked.tooltip"));
             strengthSlider.setTooltip(tip);
+            brightnessSlider.setTooltip(tip);
             enabledButton.setTooltip(tip);
             mobsBox.setTooltip(tip);
             doneButton.setTooltip(tip);
         } else {
             strengthSlider.setTooltip(Tooltip.create(Component.translatable("chamelemobs.config.strength.tooltip")));
+            brightnessSlider.setTooltip(Tooltip.create(Component.translatable("chamelemobs.config.brightness.tooltip")));
             enabledButton.setTooltip(Tooltip.create(Component.translatable("chamelemobs.config.enabled.tooltip")));
-            mobsBox.setTooltip(null);
+            mobsBox.setTooltip(Tooltip.create(Component.translatable("chamelemobs.config.mobs.tooltip")));
             doneButton.setTooltip(Tooltip.create(Component.translatable("chamelemobs.config.save.tooltip")));
         }
     }
@@ -128,6 +144,7 @@ public class ConfigScreen extends Screen {
         }
         Config.enabled = enabledButton.selected();
         Config.strength = (float) strengthSlider.getActualValue();
+        Config.brightness = (float) brightnessSlider.getActualValue();
         List<String> ids = new ArrayList<>();
         for (String line : mobsText.split("\\R")) {
             for (String part : line.split(",")) {
@@ -159,8 +176,11 @@ public class ConfigScreen extends Screen {
     }
 
     public static class StrengthSlider extends AbstractSliderButton {
-        public StrengthSlider(int x, int y, int width, int height, double currentValue) {
+        private final String label;
+
+        public StrengthSlider(int x, int y, int width, int height, String label, double currentValue) {
             super(x, y, width, height, Component.empty(), currentValue);
+            this.label = label;
             updateMessage();
         }
 
@@ -176,7 +196,7 @@ public class ConfigScreen extends Screen {
 
         @Override
         protected void updateMessage() {
-            setMessage(Component.translatable("chamelemobs.config.strength.label", String.format("%.2f", getActualValue())));
+            setMessage(Component.translatable(label, String.format("%.2f", getActualValue())));
         }
 
         public double getActualValue() {

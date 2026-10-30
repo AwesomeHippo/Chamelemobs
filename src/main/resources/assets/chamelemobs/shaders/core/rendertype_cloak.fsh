@@ -11,6 +11,7 @@ uniform float FogEnd;
 uniform vec4 FogColor;
 uniform vec2 ScreenSize;
 uniform float Strength;
+uniform float Brightness;
 
 in float vertexDistance;
 in vec4 vertexColor;
@@ -56,6 +57,8 @@ void main() {
     ivec2 ipos = ivec2(clamp(floor(samplePos), vec2(0.0), maxPos));
     vec4 scene = texelFetch(Sampler3, ipos, 0);
     vec4 cloak = vec4(scene.rgb, 1.0);
+    float dark = 1.0 - max(lightMapColor.r, max(lightMapColor.g, lightMapColor.b));
+    cloak.rgb *= 1.0 + Brightness * dark * 3.0;
     cloak.rgb = mix(overlayColor.rgb, cloak.rgb, overlayColor.a);
 
     fragColor = mix(normalColor, cloak, amount);
