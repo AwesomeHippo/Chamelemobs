@@ -1,9 +1,12 @@
 {
-  "chamelemobs.config.title": "Chamelemobs",
+  "chamelemobs.config.title": "Configuration de Chamelemobs",
   "chamelemobs.config.enabled.tooltip": "Activer ou desactiver le mod",
   "chamelemobs.config.strength.label": "Intensité: %s",
   "chamelemobs.config.strength.tooltip": "À quel point les mobs listés se fondent dans le décor",
+  "chamelemobs.config.brightness.label": "Luminosité dans le noir: %s",
+  "chamelemobs.config.brightness.tooltip": "Rend les mobs listés plus lumineux dans le noir",
   "chamelemobs.config.mobs.label": "Mobs:",
+  "chamelemobs.config.mobs.tooltip": "Un mob par ligne, ajoute /50 pour 50%% de chance etc",
   "chamelemobs.config.toggle.enabled": "Activé",
   "chamelemobs.config.toggle.disabled": "Désactivé",
   "chamelemobs.config.save.tooltip": "Enregistrer les paramètres",

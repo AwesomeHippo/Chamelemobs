@@ -34,11 +34,11 @@ public class ClientEvents {
         ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () -> new ConfigScreenHandler.ConfigScreenFactory((mc, screen) -> new ConfigScreen(screen)));
     }
 
-    public static void applyServerConfig(boolean enabled, float strength, List<String> mobs) {
+    public static void applyServerConfig(boolean enabled, float strength, float brightness, List<String> mobs) {
         if (Minecraft.getInstance().hasSingleplayerServer()) { // server is the client:p
             return;
         }
-        Config.applyRemote(enabled, strength, mobs);
+        Config.applyRemote(enabled, strength, brightness, mobs);
     }
 
     @SubscribeEvent

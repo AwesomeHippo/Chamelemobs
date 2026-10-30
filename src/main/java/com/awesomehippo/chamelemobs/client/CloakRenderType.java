@@ -34,6 +34,10 @@ public class CloakRenderType extends RenderType {
         if (strength != null) {
             strength.set(Config.strength);
         }
+        Uniform brightness = shader.getUniform("Brightness");
+        if (brightness != null) {
+            brightness.set(Config.brightness);
+        }
     }, () -> {
         RenderSystem.setShaderTexture(3, 0);
     });
